@@ -1,16 +1,15 @@
 {
   "name": "dds-server",
   "version": "1.0.0",
-  "description": "ДДС — Движение Денежных Средств",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "multer": "^1.4.5-lts.1",
     "better-sqlite3": "^9.4.3",
-    "adm-zip": "^0.5.10",
-    "cors": "^2.8.5"
+    "multer": "^1.4.5-lts.1",
+    "cors": "^2.8.5",
+    "jszip": "^3.10.1"
   }
 }
