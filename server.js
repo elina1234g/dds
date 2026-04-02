@@ -5,6 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const JSZip = require('jszip');
+const XLSX = require('xlsx');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,7 +27,6 @@ db.exec(`
     role TEXT DEFAULT 'user',
     display_name TEXT
   );
-
   CREATE TABLE IF NOT EXISTS sessions (
     token TEXT PRIMARY KEY,
     user_id INTEGER,
@@ -34,7 +34,6 @@ db.exec(`
     role TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
-
   CREATE TABLE IF NOT EXISTS operations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     dt TEXT NOT NULL,
@@ -58,7 +57,6 @@ db.exec(`
     imported_at TEXT DEFAULT (datetime('now')),
     uploaded_by TEXT DEFAULT 'anonymous'
   );
-
   CREATE TABLE IF NOT EXISTS import_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     time TEXT DEFAULT (datetime('now')),
@@ -72,7 +70,6 @@ db.exec(`
     message TEXT,
     uploaded_by TEXT
   );
-
   CREATE TABLE IF NOT EXISTS rates (
     month TEXT,
     currency TEXT,
@@ -80,7 +77,6 @@ db.exec(`
     usd_to_rub REAL,
     PRIMARY KEY (month, currency)
   );
-
   CREATE TABLE IF NOT EXISTS counterparts (
     name TEXT PRIMARY KEY,
     category TEXT,
@@ -90,7 +86,6 @@ db.exec(`
     owner_wd TEXT DEFAULT 'N',
     transfer TEXT DEFAULT 'N'
   );
-
   CREATE TABLE IF NOT EXISTS rules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     priority INTEGER,
@@ -106,7 +101,7 @@ db.exec(`
 `);
 
 // Пользователи по умолчанию
-const insertUser = db.prepare(`INSERT OR IGNORE INTO users (username, password, role, display_name) VALUES (?,?,?,?)`);
+const insertUser = db.prepare(`INSERT OR IGNORE INTO users (username,password,role,display_name) VALUES (?,?,?,?)`);
 insertUser.run('roman', 'dds2026roman', 'admin', 'Роман');
 insertUser.run('elina', 'dds2026elina', 'user', 'Элина');
 
@@ -115,7 +110,8 @@ const insertRate = db.prepare(`INSERT OR IGNORE INTO rates VALUES (?,?,?,?)`);
 [
   ['2026-01','USD',90,90],['2026-01','EUR',97,90],['2026-01','GBP',114,90],['2026-01','JPY',0.59,90],
   ['2026-02','USD',88.5,88.5],['2026-02','EUR',93,88.5],['2026-02','GBP',112,88.5],['2026-02','JPY',0.59,88.5],
-  ['2026-03','USD',88,88],['2026-03','EUR',92,88],['2026-03','GBP',111,88],['2026-03','JPY',0.58,88],
+  ['2026-03','USD',87,87],['2026-03','EUR',95,87],['2026-03','GBP',110,87],['2026-03','JPY',0.58,87],
+  ['2026-04','USD',86,86],['2026-04','EUR',94,86],['2026-04','GBP',109,86],['2026-04','JPY',0.57,86],
 ].forEach(r => insertRate.run(...r));
 
 // Контрагенты по умолчанию
@@ -157,7 +153,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
-// AUTH MIDDLEWARE
 function auth(req, res, next) {
   const token = req.headers['x-token'];
   if (!token) return res.status(401).json({ error: 'Не авторизован' });
@@ -191,11 +186,11 @@ function makeSig(dt, amount, currency, cp, desc) {
 }
 
 function getRates(month, currency) {
-  if (currency === 'RUB') return { curRub: 1, usdRub: 88.5 };
+  if (currency === 'RUB' || currency === 'RUR') return { curRub: 1, usdRub: 87 };
   const r = db.prepare('SELECT * FROM rates WHERE month=? AND currency=?').get(month, currency)
     || db.prepare('SELECT * FROM rates WHERE currency=? ORDER BY month DESC').get(currency)
-    || { cur_to_rub: 88.5, usd_to_rub: 88.5 };
-  return { curRub: r.cur_to_rub || 88.5, usdRub: r.usd_to_rub || 88.5 };
+    || { cur_to_rub: 87, usd_to_rub: 87 };
+  return { curRub: r.cur_to_rub || 87, usdRub: r.usd_to_rub || 87 };
 }
 
 function classify(cp, desc, amount) {
@@ -221,7 +216,7 @@ function classify(cp, desc, amount) {
     }
     if (matched) {
       return { category: rule.category, op_type: rule.op_type, biz_personal: rule.biz_personal,
-               who: rule.who || 'Я', owner_wd: rule.category?.includes('Вывод') ? 'Y' : 'N',
+               who: rule.who || 'Я', owner_wd: rule.category && rule.category.includes('Вывод') ? 'Y' : 'N',
                transfer: rule.op_type === 'Трансфер' ? 'Y' : 'N' };
     }
   }
@@ -251,6 +246,9 @@ function parseCSVLine(line) {
   return result;
 }
 
+// ============================================================
+// ПАРСЕР PAYONEER (CSV)
+// ============================================================
 function parsePayoneer(text) {
   const lines = text.replace(/^\uFEFF/, '').replace(/\r/g, '').split('\n');
   const ops = [];
@@ -289,6 +287,9 @@ function parsePayoneer(text) {
   return ops;
 }
 
+// ============================================================
+// ПАРСЕР ПСКБ (ZIP → XML SpreadsheetML)
+// ============================================================
 async function parsePSKB(buffer) {
   const zip = await JSZip.loadAsync(buffer);
   const fileNames = Object.keys(zip.files);
@@ -335,6 +336,108 @@ async function parsePSKB(buffer) {
 }
 
 // ============================================================
+// ПАРСЕР OZON BANK (XLSX)
+// ============================================================
+function parseOzonBank(buffer, filename) {
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+  const ws = workbook.Sheets[workbook.SheetNames[0]];
+  const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  // Найти номер счёта и строку заголовка
+  let account = 'Ozon Bank';
+  let dataStart = -1;
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    // Строка со счётом: col B = "Счет:" или "Счёт:", col F = номер
+    if (String(row[1]).trim() === 'Счет:' || String(row[1]).trim() === 'Счёт:') {
+      account = String(row[5] || 'Ozon Bank').trim();
+    }
+    // Строка заголовков: col B = "Дата", col C = "Номер документа"
+    if (String(row[1]).trim() === 'Дата' && String(row[2]).trim().includes('документа')) {
+      dataStart = i + 2; // +2 пропускаем строку подзаголовков
+      break;
+    }
+  }
+
+  if (dataStart < 0) {
+    // Fallback: найти первую строку где col B похоже на дату ДД.ММ.ГГГГ
+    for (let i = 0; i < data.length; i++) {
+      const v = String(data[i][1] || '');
+      if (v.match(/^\d{2}\.\d{2}\.\d{4}$/) || (data[i][1] instanceof Date)) {
+        dataStart = i;
+        break;
+      }
+    }
+  }
+
+  if (dataStart < 0) throw new Error('Не удалось найти данные в файле Ozon Bank');
+
+  const ops = [];
+  for (let i = dataStart; i < data.length; i++) {
+    const row = data[i];
+
+    // col B = дата
+    let dt = null;
+    const dateVal = row[1];
+    if (dateVal instanceof Date) {
+      const d = dateVal;
+      dt = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    } else if (dateVal) {
+      dt = parseDMY(String(dateVal));
+    }
+    if (!dt) continue;
+
+    // col D = дебет, col E = кредит
+    const parseNum = v => {
+      if (typeof v === 'number') return v;
+      return parseFloat(String(v||'0').replace(/\s/g,'').replace(',','.')) || 0;
+    };
+    const debit  = parseNum(row[3]);
+    const credit = parseNum(row[4]);
+    if (debit === 0 && credit === 0) continue;
+
+    // col F = контрагент (может быть многострочным)
+    const cp = String(row[5] || '').split('\n')[0].trim();
+
+    // col I = назначение платежа
+    const desc = String(row[8] || '').trim();
+
+    if (!cp && !desc) continue;
+
+    let amount = 0;
+    if (credit > 0) amount = credit;
+    else if (debit > 0) amount = -debit;
+    else continue;
+
+    const mo = dt.substring(0, 7);
+    const rates = getRates(mo, 'RUB');
+    const amtRub = Math.abs(amount);
+    const amtUsd = Math.round(amtRub / rates.usdRub * 100) / 100;
+    const sig = makeSig(dt, amount, 'RUB', cp, desc);
+
+    ops.push({ dt, mo, src: 'Ozon Bank', account, cp, desc,
+               amount, currency: 'RUB', amount_rub: amount, amount_usd: amount > 0 ? amtUsd : -amtUsd, sig });
+  }
+
+  return ops;
+}
+
+// ============================================================
+// ОПРЕДЕЛЕНИЕ ИСТОЧНИКА
+// ============================================================
+function detectSource(filename) {
+  const fn = filename.toLowerCase();
+  if (fn.endsWith('.xlsx') || fn.endsWith('.xls')) {
+    if (fn.includes('receipt') || fn.includes('ozon') || fn.includes('выписка')) return 'Ozon Bank';
+    return 'Excel';
+  }
+  if (fn.endsWith('.zip') || fn.startsWith('statement')) return 'ПСКБ';
+  if (fn.endsWith('.csv')) return 'Payoneer';
+  return '?';
+}
+
+// ============================================================
 // AUTH ROUTES
 // ============================================================
 app.post('/api/login', (req, res) => {
@@ -343,7 +446,7 @@ app.post('/api/login', (req, res) => {
   const user = db.prepare('SELECT * FROM users WHERE username=? AND password=?').get(username.toLowerCase().trim(), password);
   if (!user) return res.status(401).json({ error: 'Неверный логин или пароль' });
   const token = makeToken();
-  db.prepare('INSERT INTO sessions (token, user_id, username, role) VALUES (?,?,?,?)').run(token, user.id, user.username, user.role);
+  db.prepare('INSERT INTO sessions (token,user_id,username,role) VALUES (?,?,?,?)').run(token, user.id, user.username, user.role);
   res.json({ token, username: user.username, display_name: user.display_name, role: user.role });
 });
 
@@ -357,7 +460,7 @@ app.get('/api/me', auth, (req, res) => {
 });
 
 // ============================================================
-// API ROUTES (все требуют авторизации)
+// API ROUTES
 // ============================================================
 app.get('/api/operations', auth, (req, res) => {
   const { month, type, src, search, limit = 1000, offset = 0 } = req.query;
@@ -404,25 +507,57 @@ app.post('/api/import', auth, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Файл не найден' });
   const filename = req.file.originalname;
   const uploader = req.user.display_name || req.user.username;
-  const fn = filename.toLowerCase();
-  let rawOps = [], source = '?';
+  const source = detectSource(filename);
+  let rawOps = [];
+
   try {
-    if (fn.endsWith('.csv')) { source = 'Payoneer'; rawOps = parsePayoneer(req.file.buffer.toString('utf-8')); }
-    else if (fn.endsWith('.zip') || fn.startsWith('statement')) { source = 'ПСКБ'; rawOps = await parsePSKB(req.file.buffer); }
-    else return res.status(400).json({ error: 'Только CSV (Payoneer) или ZIP (ПСКБ)' });
-  } catch(e) { return res.status(500).json({ error: `Ошибка разбора: ${e.message}` }); }
-  if (!rawOps.length) return res.json({ imported: 0, dups: 0, total: 0, message: 'Операций не найдено' });
-  const insertOp = db.prepare(`INSERT OR IGNORE INTO operations (dt,mo,src,account,cp,ds,amount,currency,op_type,category,biz_personal,who,owner_wd,transfer,amount_rub,amount_usd,sig,file_name,uploaded_by) VALUES (@dt,@mo,@src,@account,@cp,@ds,@amount,@currency,@op_type,@category,@biz_personal,@who,@owner_wd,@transfer,@amount_rub,@amount_usd,@sig,@file_name,@uploaded_by)`);
+    if (source === 'Payoneer') {
+      rawOps = parsePayoneer(req.file.buffer.toString('utf-8'));
+    } else if (source === 'ПСКБ') {
+      rawOps = await parsePSKB(req.file.buffer);
+    } else if (source === 'Ozon Bank') {
+      rawOps = parseOzonBank(req.file.buffer, filename);
+    } else {
+      return res.status(400).json({ error: 'Формат не поддерживается. Используйте: CSV (Payoneer), ZIP (ПСКБ), XLSX (Ozon Bank).' });
+    }
+  } catch(e) {
+    return res.status(500).json({ error: `Ошибка разбора файла: ${e.message}` });
+  }
+
+  if (!rawOps.length) {
+    return res.json({ imported: 0, dups: 0, total: 0, message: 'Операций не найдено в файле' });
+  }
+
+  const insertOp = db.prepare(`
+    INSERT OR IGNORE INTO operations
+    (dt,mo,src,account,cp,ds,amount,currency,op_type,category,biz_personal,who,owner_wd,transfer,amount_rub,amount_usd,sig,file_name,uploaded_by)
+    VALUES (@dt,@mo,@src,@account,@cp,@ds,@amount,@currency,@op_type,@category,@biz_personal,@who,@owner_wd,@transfer,@amount_rub,@amount_usd,@sig,@file_name,@uploaded_by)
+  `);
+
   let imported = 0;
   db.transaction(ops => {
     for (const op of ops) {
       const cls = classify(op.cp, op.desc, op.amount);
-      const r = insertOp.run({...op, ds:op.desc, op_type:cls.op_type||(op.amount>0?'Доход':'Расход'), category:cls.category||'', biz_personal:cls.biz_personal||'', who:cls.who||'Я', owner_wd:cls.owner_wd||'N', transfer:cls.transfer||'N', file_name:filename, uploaded_by:uploader});
+      const r = insertOp.run({
+        ...op, ds: op.desc,
+        op_type:      cls.op_type || (op.amount > 0 ? 'Доход' : 'Расход'),
+        category:     cls.category || '',
+        biz_personal: cls.biz_personal || '',
+        who:          cls.who || 'Я',
+        owner_wd:     cls.owner_wd || 'N',
+        transfer:     cls.transfer || 'N',
+        file_name:    filename,
+        uploaded_by:  uploader
+      });
       if (r.changes > 0) imported++;
     }
   })(rawOps);
+
   const dups = rawOps.length - imported;
-  db.prepare(`INSERT INTO import_log (month,source,file_name,total,imported,dups,status,message,uploaded_by) VALUES (?,?,?,?,?,?,?,?,?)`).run(rawOps[0]?.mo||'', source, filename, rawOps.length, imported, dups, imported>0?'ok':'дубль', `Загружено ${imported}, дублей ${dups}`, uploader);
+  const mo = rawOps[0]?.mo || '';
+  db.prepare(`INSERT INTO import_log (month,source,file_name,total,imported,dups,status,message,uploaded_by) VALUES (?,?,?,?,?,?,?,?,?)`)
+    .run(mo, source, filename, rawOps.length, imported, dups, imported > 0 ? 'ok' : 'дубль', `Загружено ${imported}, дублей ${dups}`, uploader);
+
   res.json({ imported, dups, total: rawOps.length, source, message: `Загружено ${imported} операций, дублей ${dups}` });
 });
 
@@ -432,14 +567,15 @@ app.post('/api/operations/manual', auth, (req, res) => {
   const mo = dt.substring(0,7);
   const rates = getRates(mo, currency||'RUB');
   const absAmt = Math.abs(amount);
-  const amtRub = currency==='RUB'?absAmt:Math.round(absAmt*rates.curRub*100)/100;
-  const amtUsd = currency==='USD'?absAmt:Math.round(amtRub/rates.usdRub*100)/100;
+  const amtRub = (currency==='RUB'||currency==='RUR') ? absAmt : Math.round(absAmt*rates.curRub*100)/100;
+  const amtUsd = currency==='USD' ? absAmt : Math.round(amtRub/rates.usdRub*100)/100;
   const sig = makeSig(dt, amount, currency||'RUB', desc, desc);
-  db.prepare(`INSERT OR IGNORE INTO operations (dt,mo,src,cp,ds,amount,currency,op_type,category,biz_personal,who,owner_wd,transfer,amount_rub,amount_usd,sig,file_name,uploaded_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(dt,mo,'Ручная',desc,desc,amount,currency||'RUB',op_type||'Расход',category||'',biz_personal||'',who||'Я',owner_wd||'N','N',op_type==='Доход'?amtRub:-amtRub,op_type==='Доход'?amtUsd:-amtUsd,sig,'manual',req.user.display_name||req.user.username);
+  db.prepare(`INSERT OR IGNORE INTO operations (dt,mo,src,cp,ds,amount,currency,op_type,category,biz_personal,who,owner_wd,transfer,amount_rub,amount_usd,sig,file_name,uploaded_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(dt,mo,'Ручная',desc,desc,amount,currency||'RUB',op_type||'Расход',category||'',biz_personal||'',who||'Я',owner_wd||'N','N',op_type==='Доход'?amtRub:-amtRub,op_type==='Доход'?amtUsd:-amtUsd,sig,'manual',req.user.display_name||req.user.username);
   res.json({ ok: true });
 });
 
-app.get('/api/rates', auth, (req, res) => res.json(db.prepare('SELECT * FROM rates ORDER BY month, currency').all()));
+app.get('/api/rates', auth, (req, res) => res.json(db.prepare('SELECT * FROM rates ORDER BY month,currency').all()));
 app.post('/api/rates', auth, adminOnly, (req, res) => {
   const {month,currency,cur_to_rub,usd_to_rub} = req.body;
   db.prepare('INSERT OR REPLACE INTO rates VALUES (?,?,?,?)').run(month,currency,cur_to_rub,usd_to_rub);
@@ -492,20 +628,19 @@ app.post('/api/reclassify', auth, adminOnly, (req, res) => {
   res.json({ ok: true, updated });
 });
 
-// Управление пользователями (только admin)
 app.get('/api/users', auth, adminOnly, (req, res) => {
   res.json(db.prepare('SELECT id,username,role,display_name FROM users').all());
 });
 app.post('/api/users', auth, adminOnly, (req, res) => {
-  const {username, password, role, display_name} = req.body;
-  if (!username || !password) return res.status(400).json({ error: 'Нужны логин и пароль' });
-  db.prepare('INSERT OR REPLACE INTO users (username,password,role,display_name) VALUES (?,?,?,?)').run(username.toLowerCase().trim(), password, role||'user', display_name||username);
-  res.json({ ok: true });
+  const {username,password,role,display_name} = req.body;
+  if (!username||!password) return res.status(400).json({error:'Нужны логин и пароль'});
+  db.prepare('INSERT OR REPLACE INTO users (username,password,role,display_name) VALUES (?,?,?,?)').run(username.toLowerCase().trim(),password,role||'user',display_name||username);
+  res.json({ok:true});
 });
 app.delete('/api/users/:username', auth, adminOnly, (req, res) => {
-  if (req.params.username === req.user.username) return res.status(400).json({ error: 'Нельзя удалить себя' });
+  if (req.params.username === req.user.username) return res.status(400).json({error:'Нельзя удалить себя'});
   db.prepare('DELETE FROM users WHERE username=?').run(req.params.username);
-  res.json({ ok: true });
+  res.json({ok:true});
 });
 
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
