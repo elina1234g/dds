@@ -1,10 +1,536 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ДДС — Финансы ИП</title></head>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДДС — Финансы ИП</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F4F6FA;--s:#fff;--bd:#E5E8F0;--a:#5B6CF9;--al:#EDEFFD;--ah:#4455E8;--t1:#0F1621;--t2:#64748B;--t3:#94A3B8;--g:#10B981;--gb:#ECFDF5;--gt:#065F46;--r:#F43F5E;--rb:#FFF1F2;--rt:#9F1239;--am:#F59E0B;--ab:#FFFBEB;--at:#92400E;--pi:#EC4899;--pb:#FDF2F8;--pt:#9D174D;--pu:#8B5CF6;--pub:#F5F3FF;--put:#5B21B6;--sh:0 1px 3px rgba(0,0,0,.06)}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:var(--t1);background:var(--bg)}
+.app{display:flex;height:100vh;overflow:hidden}
+.sb{width:200px;background:var(--s);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0}
+.sbl{padding:16px 14px 13px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--bd)}
+.sbi{width:30px;height:30px;background:var(--a);border-radius:8px;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.sbt{font-size:13px;font-weight:700}.sbs{font-size:10px;color:var(--t3)}
+.sbn{padding:8px;flex:1}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--t2);font-size:12.5px;font-weight:500;margin-bottom:2px;transition:all .15s;user-select:none}
+.ni:hover{background:var(--bg);color:var(--t1)}.ni.on{background:var(--al);color:var(--a);font-weight:600}
+.ni svg{width:15px;height:15px;flex-shrink:0}
+.sbf{padding:9px 8px;border-top:1px solid var(--bd)}
+.stats{font-size:11px;color:var(--t3);padding:7px 10px;background:var(--bg);border-radius:8px;line-height:1.6}
+.mn{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.tb{background:var(--s);border-bottom:1px solid var(--bd);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.tbt{font-size:15px;font-weight:700}
+.tbr{display:flex;align-items:center;gap:8px}
+.cnt{padding:20px;overflow-y:auto;flex:1}
+.pg{display:none}.pg.on{display:block}
+.card{background:var(--s);border-radius:12px;box-shadow:var(--sh);border:1px solid var(--bd);padding:16px 18px;margin-bottom:14px}
+.ct{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:12px}
+.mg{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.mc{background:var(--s);border-radius:12px;box-shadow:var(--sh);border:1px solid var(--bd);padding:13px 15px}
+.ml{font-size:10px;color:var(--t3);margin-bottom:4px;font-weight:500}
+.mv{font-size:17px;font-weight:700;line-height:1}
+.mbg{display:inline-flex;font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;margin-top:4px}
+.bup{background:var(--gb);color:var(--gt)}.bdn{background:var(--rb);color:var(--rt)}.bnu{background:var(--bg);color:var(--t3)}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;border:1px solid var(--bd);background:var(--s);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--t1);transition:all .15s;box-shadow:var(--sh)}
+.btn:hover{background:var(--bg)}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btnp{background:var(--a);color:#fff;border-color:var(--a)}.btnp:hover{background:var(--ah)}
+select,input[type=text],input[type=number],input[type=date]{height:32px;padding:0 10px;border:1px solid var(--bd);border-radius:8px;background:var(--s);font-family:inherit;font-size:12px;color:var(--t1);outline:none;box-shadow:var(--sh)}
+select:focus,input:focus{border-color:var(--a)}
+.dz{border:2px dashed var(--bd);border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg)}
+.dz:hover,.dz.dg{border-color:var(--a);background:var(--al)}
+.dzi{width:40px;height:40px;background:var(--al);border-radius:10px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center}
+.dz p{font-size:13px;font-weight:600;margin-bottom:3px}.dz small{font-size:11px;color:var(--t3)}
+input[type=file]{display:none}
+.fi{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-top:7px;border:1px solid var(--bd);font-size:12px}
+.fbg{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;flex-shrink:0}
+.fpay{background:#EFF6FF;color:#1D4ED8}.fpsk{background:var(--gb);color:var(--gt)}.funk{background:var(--bg);color:var(--t3);border:1px solid var(--bd)}
+.fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.fsz{font-size:10px;color:var(--t3)}.frm{cursor:pointer;color:var(--t3);font-size:16px;transition:color .15s}.frm:hover{color:var(--r)}
+.prg{height:3px;background:var(--bd);border-radius:2px;overflow:hidden;margin:10px 0}
+.prb{height:100%;background:var(--a);width:0;transition:width .3s}
+.ri{padding:9px 12px;border-radius:8px;margin-top:7px;display:flex;gap:8px;font-size:12px}
+.rok{background:var(--gb)}.rwn{background:var(--ab)}.rer{background:var(--rb)}
+.ric{font-size:14px;flex-shrink:0}.rfn{font-weight:600;margin-bottom:2px}.rm{color:var(--t2);font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-weight:600;text-align:left;padding:9px 11px;border-bottom:2px solid var(--bd);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+td{padding:9px 11px;border-bottom:1px solid var(--bd)}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#F8FAFF}
+.tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.tinc{background:var(--gb);color:var(--gt)}.texp{background:var(--rb);color:var(--rt)}.ttr{background:#EFF6FF;color:#1D4ED8}
+.tbiz{background:var(--al);color:var(--a)}.tper{background:var(--ab);color:var(--at)}.tf{background:var(--pb);color:var(--pt)}.tow{background:var(--pub);color:var(--put)}
+.fr{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;align-items:center}
+.fr label{font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase}
+.mtt{display:flex;gap:3px;margin-bottom:14px;background:var(--bg);padding:3px;border-radius:8px;width:fit-content;border:1px solid var(--bd)}
+.mtb{padding:5px 12px;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;color:var(--t2);border:none;background:none;font-family:inherit;transition:all .15s}
+.mtb:hover{color:var(--t1)}.mtb.on{background:var(--s);color:var(--a);box-shadow:var(--sh)}
+.sr{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bd);font-size:12px}
+.sr:last-child{border-bottom:none}
+.ssub{font-weight:700;padding-top:9px;border-top:2px solid var(--bd);border-bottom:none}
+.sgd{font-size:14px;font-weight:700;padding-top:11px;border-top:2px solid var(--t1);border-bottom:none}
+.sl{color:var(--t2)}.svp{color:var(--gt);font-weight:600}.svn{color:var(--rt);font-weight:600}
+.ssec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);padding:10px 0 3px;border-bottom:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cw{position:relative;width:100%}
+.lg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:9px;font-size:11px;color:var(--t2)}
+.ld{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:3px;flex-shrink:0}
+.cpr{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--bd)}
+.cpr:last-child{border-bottom:none}
+.cpn{flex:2;font-weight:500;font-size:12px}.cpf{flex:3;display:flex;gap:4px;flex-wrap:wrap}
+.cpd{cursor:pointer;color:var(--t3);font-size:15px;padding:2px 3px;transition:color .15s}.cpd:hover{color:var(--r)}
+.mdbg{position:fixed;inset:0;background:rgba(10,15,30,.4);display:flex;align-items:center;justify-content:center;z-index:200}
+.mdl{background:var(--s);border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.15);border:1px solid var(--bd);padding:22px;width:min(460px,92vw);max-height:88vh;overflow-y:auto}
+.mdl h3{font-size:15px;font-weight:700;margin-bottom:14px}
+.frow{margin-bottom:10px}
+.frow label{display:block;font-size:10px;font-weight:700;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.frow input,.frow select{width:100%}
+.fbtns{display:flex;gap:7px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--bd)}
+.empty{text-align:center;padding:32px;color:var(--t3);font-size:12px}
+.chip{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:10px;background:var(--bg);color:var(--t2);border:1px solid var(--bd);font-weight:500}
+.pa{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.pa h2{font-size:16px;font-weight:700}
+.user-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;background:var(--al);color:var(--a);font-size:11px;font-weight:600}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--t1);color:#fff;padding:10px 16px;border-radius:8px;font-size:12px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
 <body>
+<div class="app">
+<div class="sb">
+  <div class="sbl">
+    <div class="sbi">Д</div>
+    <div><div class="sbt">ДДС</div><div class="sbs">Финансы ИП</div></div>
+  </div>
+  <nav class="sbn">
+    <div class="ni on" onclick="go('summary')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Сводка</div>
+    <div class="ni" onclick="go('ops')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Операции</div>
+    <div class="ni" onclick="go('charts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Графики</div>
+    <div class="ni" onclick="go('upload')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Загрузка</div>
+    <div class="ni" onclick="go('cp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Контрагенты</div>
+  </nav>
+  <div class="sbf"><div class="stats" id="sideStats">Загрузка...</div></div>
+</div>
+
+<div class="mn">
+  <div class="tb">
+    <span class="tbt" id="tbT">Сводка ДДС</span>
+    <div class="tbr">
+      <input type="text" id="userName" placeholder="Ваше имя" style="width:120px;height:30px" value="Роман">
+      <select id="gC" onchange="onCurr()" style="height:30px;font-size:11px"><option value="RUB">&#8381; RUB</option><option value="USD">$ USD</option></select>
+      <button class="btn btnp" style="padding:5px 11px;font-size:11px" onclick="openMM()">+ Операция</button>
+    </div>
+  </div>
+  <div class="cnt">
+
+  <div id="pg-summary" class="pg on">
+    <div class="mtt" id="sumTabs"></div>
+    <div class="mg" id="sumMet"></div>
+    <div class="two">
+      <div class="card" id="sumTbl"></div>
+      <div class="card"><div class="ct">Расходы бизнес</div><div class="lg" id="expLg"></div><div class="cw" style="height:195px"><canvas id="expCh"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="ct">Динамика по месяцам</div>
+      <div class="lg"><span><span class="ld" style="background:#10B981"></span>Доходы</span><span><span class="ld" style="background:#F43F5E"></span>Расходы бизнес</span><span><span class="ld" style="background:#8B5CF6"></span>Вывод владельцу</span></div>
+      <div class="cw" style="height:200px"><canvas id="trCh"></canvas></div>
+    </div>
+  </div>
+
+  <div id="pg-ops" class="pg">
+    <div class="pa"><h2>Операции</h2><button class="btn" onclick="openMM()">+ Вручную</button></div>
+    <div class="fr">
+      <label>Месяц</label><select id="opM" onchange="rOps()"><option value="">Все</option></select>
+      <label>Тип</label><select id="opT" onchange="rOps()"><option value="">Все</option><option>Доход</option><option>Расход</option><option>Трансфер</option></select>
+      <label>Источник</label><select id="opSrc" onchange="rOps()"><option value="">Все</option><option>Payoneer</option><option>ПСКБ</option><option>Ozon Bank</option><option>Ручная</option></select>
+      <input type="text" id="opS" placeholder="Поиск..." style="width:160px" oninput="rOps()">
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto">
+      <table><thead><tr><th>Дата</th><th>Источник</th><th>Контрагент</th><th>Описание</th><th style="text-align:right">Сумма</th><th>Вал.</th><th style="text-align:right">RUB</th><th>Тип</th><th>Статья</th><th>Б/Л</th><th>Кто</th><th>Вывод</th></tr></thead>
+      <tbody id="opTb"></tbody></table>
+    </div>
+    <div style="font-size:11px;color:var(--t3);margin-top:7px" id="opCnt"></div>
+  </div>
+
+  <div id="pg-charts" class="pg">
+    <div class="two" style="margin-bottom:14px">
+      <div class="card"><div class="ct">Доходы по месяцам</div><div class="cw" style="height:185px"><canvas id="inCh"></canvas></div></div>
+      <div class="card"><div class="ct">Расходы по статьям</div><div class="lg" id="catLg"></div><div class="cw" style="height:185px"><canvas id="ctCh"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="ct">Cash flow</div>
+      <div class="lg"><span><span class="ld" style="background:#10B981"></span>Доходы</span><span><span class="ld" style="background:#F43F5E"></span>Расходы</span><span><span class="ld" style="background:#8B5CF6"></span>Вывод</span></div>
+      <div class="cw" style="height:210px"><canvas id="cfCh"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Личные расходы</div>
+      <div class="lg"><span><span class="ld" style="background:#F59E0B"></span>Я</span><span><span class="ld" style="background:#EC4899"></span>F (жена)</span></div>
+      <div class="cw" style="height:160px"><canvas id="prCh"></canvas></div>
+    </div>
+  </div>
+
+  <div id="pg-upload" class="pg">
+    <div class="pa"><h2>Загрузка выписок</h2></div>
+    <div class="dz" id="dzEl" onclick="document.getElementById('fIn').click()">
+      <div class="dzi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6CF9" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div>
+      <p>Перетащите файлы или нажмите для выбора</p>
+      <small>Payoneer CSV · ПСКБ ZIP · можно несколько сразу</small>
+    </div>
+    <input type="file" id="fIn" multiple accept=".csv,.zip">
+    <div id="fList"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btnp" id="impBtn" onclick="startImport()" disabled>Импортировать</button>
+      <button class="btn" onclick="clearF()">Очистить</button>
+    </div>
+    <div class="prg" id="prgW" style="display:none"><div class="prb" id="prgB"></div></div>
+    <div id="impRes"></div>
+    <div class="card" style="margin-top:14px"><div class="ct">Лог импорта</div><div id="logT"><div class="empty">Загрузка...</div></div></div>
+  </div>
+
+  <div id="pg-cp" class="pg">
+    <div class="pa"><h2>Контрагенты</h2><button class="btn btnp" onclick="openCpM()">+ Добавить</button></div>
+    <div class="card"><div id="cpL"><div class="empty">Загрузка...</div></div></div>
+    <div class="pa" style="margin-top:16px"><h2 style="font-size:14px">Правила классификации</h2><button class="btn" onclick="openRuM()">+ Правило</button></div>
+    <div class="card"><div id="ruL"><div class="empty">Загрузка...</div></div></div>
+    <div style="margin-top:12px">
+      <button class="btn" onclick="reclassify()">🔄 Переклассифицировать все операции</button>
+    </div>
+  </div>
+
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- MODALS -->
+<div class="mdbg" id="mdM" style="display:none" onclick="if(event.target===this)cm('mdM')">
+<div class="mdl"><h3>Новая операция</h3>
+  <div class="two"><div class="frow"><label>Дата</label><input type="date" id="mDt"></div><div class="frow"><label>Сумма</label><input type="number" id="mAm"></div></div>
+  <div class="two"><div class="frow"><label>Валюта</label><select id="mCu"><option>RUB</option><option>USD</option><option>EUR</option><option>GBP</option></select></div><div class="frow"><label>Тип</label><select id="mTp"><option>Расход</option><option>Доход</option><option>Трансфер</option></select></div></div>
+  <div class="frow"><label>Описание</label><input type="text" id="mDs" placeholder="Наличные..."></div>
+  <div class="frow"><label>Статья</label><input type="text" id="mCt"></div>
+  <div class="two"><div class="frow"><label>Бизнес / Личное</label><select id="mBl"><option>Бизнес</option><option>Личное</option></select></div><div class="frow"><label>Кто</label><select id="mWh"><option>Я</option><option>F</option></select></div></div>
+  <div class="frow"><label>Вывод ИП</label><select id="mOw"><option value="N">Нет</option><option value="Y">Да</option></select></div>
+  <div class="fbtns"><button class="btn" onclick="cm('mdM')">Отмена</button><button class="btn btnp" onclick="svM()">Сохранить</button></div>
+</div></div>
+
+<div class="mdbg" id="mdCp" style="display:none" onclick="if(event.target===this)cm('mdCp')">
+<div class="mdl"><h3>Добавить контрагента</h3>
+  <div class="frow"><label>Название</label><input type="text" id="cpN"></div>
+  <div class="frow"><label>Статья</label><input type="text" id="cpC"></div>
+  <div class="two"><div class="frow"><label>Тип</label><select id="cpT"><option>Доход</option><option>Расход</option><option>Трансфер</option></select></div><div class="frow"><label>Бизнес/Личное</label><select id="cpB"><option>Бизнес</option><option>Личное</option><option value=""></option></select></div></div>
+  <div class="two"><div class="frow"><label>Кто</label><select id="cpW"><option>Я</option><option>F</option></select></div><div class="frow"><label>Вывод ИП</label><select id="cpO"><option value="N">Нет</option><option value="Y">Да</option></select></div></div>
+  <div class="frow"><label>Трансфер</label><select id="cpTr"><option value="N">Нет</option><option value="Y">Да</option></select></div>
+  <div class="fbtns"><button class="btn" onclick="cm('mdCp')">Отмена</button><button class="btn btnp" onclick="svCp()">Сохранить</button></div>
+</div></div>
+
+<div class="mdbg" id="mdRu" style="display:none" onclick="if(event.target===this)cm('mdRu')">
+<div class="mdl"><h3>Новое правило</h3>
+  <div class="frow"><label>Приоритет</label><input type="number" id="ruPr" value="50"></div>
+  <div class="two"><div class="frow"><label>Поле</label><select id="ruFl"><option>Описание</option><option>Контрагент</option></select></div><div class="frow"><label>Тип</label><select id="ruMt"><option>contains</option><option>regex</option><option>exact</option></select></div></div>
+  <div class="frow"><label>Шаблон</label><input type="text" id="ruPt"></div>
+  <div class="frow"><label>Тип суммы</label><select id="ruAt"><option>любой</option><option>доход</option><option>расход</option></select></div>
+  <div class="frow"><label>Статья</label><input type="text" id="ruCt"></div>
+  <div class="two"><div class="frow"><label>Тип операции</label><select id="ruTp"><option>Доход</option><option>Расход</option><option>Трансфер</option></select></div><div class="frow"><label>Бизнес/Личное</label><select id="ruBl"><option>Бизнес</option><option>Личное</option><option value=""></option></select></div></div>
+  <div class="fbtns"><button class="btn" onclick="cm('mdRu')">Отмена</button><button class="btn btnp" onclick="svRu()">Сохранить</button></div>
+</div></div>
+
 <script>
-// Временная заглушка — основное приложение загружается
-window.location.href = '/api/me';
+const API = '';
+const CL = ['#5B6CF9','#10B981','#F59E0B','#F43F5E','#8B5CF6','#EC4899','#3B82F6','#14B8A6'];
+const PT = {summary:'Сводка ДДС', ops:'Операции', charts:'Графики', upload:'Загрузка', cp:'Контрагенты'};
+let CH = {}, SM = '', SF = [], ALL_MONTHS = [], ALL_OPS_CACHE = [];
+
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmt = (n, C) => { C = C || gC(); return C === 'RUB' ? Math.round(n).toLocaleString('ru-RU') + ' ₽' : '$' + Math.round(n).toLocaleString('ru-RU'); };
+function gC() { return document.getElementById('gC').value || 'RUB'; }
+function getUser() { return document.getElementById('userName').value || 'anonymous'; }
+function toast(msg, err) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = err ? 'var(--r)' : 'var(--t1)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function api(path, opts = {}) {
+  const r = await fetch(API + path, opts);
+  return r.json();
+}
+
+async function loadStats() {
+  const stats = await api('/api/stats');
+  ALL_MONTHS = stats.months || [];
+  if (!SM && ALL_MONTHS.length) SM = ALL_MONTHS[ALL_MONTHS.length - 1];
+  document.getElementById('sideStats').innerHTML = `${stats.total_ops} операций<br>${ALL_MONTHS.join(' · ')}`;
+  return stats;
+}
+
+function go(pg) {
+  document.querySelectorAll('.ni').forEach((n,i)=>{const ps=['summary','ops','charts','upload','cp'];n.classList.toggle('on',ps[i]===pg);});
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pg-'+pg).classList.add('on');
+  document.getElementById('tbT').textContent = PT[pg] || pg;
+  if(pg==='summary') rSum();
+  if(pg==='ops') rOps();
+  if(pg==='charts') rChts();
+  if(pg==='upload') rLog();
+  if(pg==='cp') { rCp(); rRu(); }
+}
+
+function onCurr() { rSum(); if(document.getElementById('pg-charts').classList.contains('on')) rChts(); }
+
+async function rSum() {
+  const tabs = document.getElementById('sumTabs');
+  tabs.innerHTML = ALL_MONTHS.map(m => `<button class="mtb ${m===SM?'on':''}" onclick="SM='${m}';rSum()">${m}</button>`).join('');
+
+  const data = await api(`/api/summary/${SM}`);
+  const C = gC();
+  const V = C === 'RUB' ? 'rub' : 'usd';
+
+  const tInc  = C === 'RUB' ? data.income_rub  : data.income_usd;
+  const tBiz  = C === 'RUB' ? data.exp_biz_rub : data.exp_biz_usd;
+  const tMe   = C === 'RUB' ? data.exp_pers_rub: data.exp_pers_usd;
+  const tF    = C === 'RUB' ? data.exp_wife_rub: data.exp_wife_usd;
+  const tOwn  = C === 'RUB' ? data.owner_wd_rub: data.owner_wd_usd;
+  const net   = tInc - tBiz - tMe - tF - tOwn;
+
+  document.getElementById('sumMet').innerHTML = `
+    <div class="mc"><div class="ml">Доходы</div><div class="mv">${fmt(tInc,C)}</div><div class="mbg bup">входящие</div></div>
+    <div class="mc"><div class="ml">Расходы бизнес</div><div class="mv">${fmt(tBiz,C)}</div><div class="mbg bdn">операц.</div></div>
+    <div class="mc"><div class="ml">Вывод владельцу</div><div class="mv">${fmt(tOwn,C)}</div><div class="mbg bnu">ИП</div></div>
+    <div class="mc"><div class="ml">Личные (Я+F)</div><div class="mv">${fmt(tMe+tF,C)}</div><div class="mbg bnu">личные</div></div>
+    <div class="mc"><div class="ml">Чистый поток</div><div class="mv" style="color:${net>=0?'var(--gt)':'var(--rt)'}">${fmt(Math.abs(net),C)}</div><div class="mbg ${net>=0?'bup':'bdn'}">${net>=0?'▲':'▼'}</div></div>`;
+
+  const bc = data.by_category || {};
+  const ce = Object.entries(bc).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('expLg').innerHTML = ce.slice(0,6).map(([c],i)=>`<span><span class="ld" style="background:${CL[i%CL.length]}"></span>${esc(c)}</span>`).join('');
+  if(CH.exp) CH.exp.destroy();
+  CH.exp = new Chart(document.getElementById('expCh'),{type:'doughnut',data:{labels:ce.map(e=>e[0]),datasets:[{data:ce.map(e=>Math.round(e[1])),backgroundColor:CL,borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'62%'}});
+
+  // Динамика по всем месяцам
+  const allData = await Promise.all(ALL_MONTHS.map(m => api(`/api/summary/${m}`)));
+  const tf = n => C==='RUB'?n.toLocaleString('ru-RU'):'$'+n.toLocaleString('ru-RU');
+  if(CH.tr) CH.tr.destroy();
+  CH.tr = new Chart(document.getElementById('trCh'),{type:'bar',data:{labels:ALL_MONTHS,datasets:[
+    {data:allData.map(d=>Math.round(C==='RUB'?d.income_rub:d.income_usd)),backgroundColor:'#10B981',borderRadius:4},
+    {data:allData.map(d=>-Math.round(C==='RUB'?d.exp_biz_rub:d.exp_biz_usd)),backgroundColor:'#F43F5E',borderRadius:4},
+    {data:allData.map(d=>-Math.round(C==='RUB'?d.owner_wd_rub:d.owner_wd_usd)),backgroundColor:'#8B5CF6',borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#F1F5F9'},ticks:{font:{size:10},callback:n=>(n<0?'-':'')+tf(Math.abs(n))}}}}});
+
+  // Сводная таблица
+  const incByC = {};
+  const opsForMonth = await api(`/api/operations?month=${SM}&limit=2000`);
+  opsForMonth.ops.filter(o=>o.op_type==='Доход'&&o.transfer!=='Y').forEach(o=>{
+    const c=o.category||'—';incByC[c]=(incByC[c]||0)+Math.abs(C==='RUB'?o.amount_rub:o.amount_usd||0);
+  });
+  let h = `<div class="ct">Сводка — ${SM}</div>`;
+  h += `<div class="sr ssec"><span>Доходы</span></div>`;
+  Object.entries(incByC).sort((a,b)=>b[1]-a[1]).forEach(([c,v])=>{h+=`<div class="sr"><span class="sl">${esc(c)}</span><span class="svp">+${fmt(v,C)}</span></div>`;});
+  h += `<div class="sr ssub"><span>Итого доходы</span><span class="svp">+${fmt(tInc,C)}</span></div>`;
+  h += `<div class="sr ssec"><span>Расходы бизнес</span></div>`;
+  ce.forEach(([c,v])=>{h+=`<div class="sr"><span class="sl">${esc(c)}</span><span class="svn">−${fmt(v,C)}</span></div>`;});
+  h += `<div class="sr ssub"><span>Итого расходы бизнес</span><span class="svn">−${fmt(tBiz,C)}</span></div>`;
+  h += `<div class="sr ssec"><span>Личные и вывод</span></div>`;
+  h += `<div class="sr"><span class="sl">Личные (Я)</span><span class="svn">−${fmt(tMe,C)}</span></div>`;
+  h += `<div class="sr"><span class="sl">Личные (F, жена)</span><span class="svn">−${fmt(tF,C)}</span></div>`;
+  h += `<div class="sr"><span class="sl">Вывод владельцу (ИП)</span><span class="svn">−${fmt(tOwn,C)}</span></div>`;
+  h += `<div class="sr sgd"><span>Чистый поток</span><span style="color:${net>=0?'var(--gt)':'var(--rt)'}">${net>=0?'+':'−'}${fmt(Math.abs(net),C)}</span></div>`;
+  document.getElementById('sumTbl').innerHTML = h;
+}
+
+async function rOps() {
+  const mf = document.getElementById('opM').value;
+  const tf2 = document.getElementById('opT').value;
+  const sf2 = document.getElementById('opSrc').value;
+  const sf  = document.getElementById('opS').value;
+
+  const mS = document.getElementById('opM');
+  if (mS.options.length <= 1) {
+    ALL_MONTHS.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; mS.appendChild(o); });
+  }
+
+  let url = `/api/operations?limit=500`;
+  if(mf) url += `&month=${mf}`;
+  if(tf2) url += `&type=${encodeURIComponent(tf2)}`;
+  if(sf2) url += `&src=${encodeURIComponent(sf2)}`;
+  if(sf) url += `&search=${encodeURIComponent(sf)}`;
+
+  const data = await api(url);
+  const ops = data.ops || [];
+  const tb = document.getElementById('opTb');
+  if(!ops.length){tb.innerHTML='<tr><td colspan="12"><div class="empty">Нет операций</div></td></tr>';document.getElementById('opCnt').textContent='';return;}
+
+  tb.innerHTML = ops.map(o=>`<tr>
+    <td style="white-space:nowrap;color:var(--t3);font-size:11px">${o.dt}</td>
+    <td><span class="chip">${esc(o.src)}</span></td>
+    <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500" title="${esc(o.cp)}">${esc(o.cp)}</td>
+    <td style="max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t2)" title="${esc(o.ds)}">${esc(o.ds)}</td>
+    <td style="text-align:right;font-weight:600;color:${o.amount>0?'var(--gt)':'var(--rt)'};white-space:nowrap">${Number(o.amount||0).toFixed(2)}</td>
+    <td style="color:var(--t3);font-size:11px">${o.currency}</td>
+    <td style="text-align:right;font-size:11px">${Math.round(Math.abs(o.amount_rub||0)).toLocaleString('ru-RU')}</td>
+    <td><span class="tag ${o.op_type==='Доход'?'tinc':o.op_type==='Расход'?'texp':'ttr'}">${o.op_type||'—'}</span></td>
+    <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${esc(o.category)}</td>
+    <td><span class="tag ${o.biz_personal==='Бизнес'?'tbiz':o.biz_personal==='Личное'?'tper':''}">${o.biz_personal||'—'}</span></td>
+    <td>${o.who==='F'?'<span class="tag tf">F</span>':'<span style="font-size:11px;color:var(--t3)">Я</span>'}</td>
+    <td>${o.owner_wd==='Y'?'<span class="tag tow">Да</span>':'<span style="color:var(--t3)">—</span>'}</td>
+  </tr>`).join('');
+  document.getElementById('opCnt').textContent = `Показано ${ops.length} из ${data.total}`;
+}
+
+async function rChts() {
+  const C = gC();
+  const tf = n => C==='RUB'?n.toLocaleString('ru-RU'):'$'+n.toLocaleString('ru-RU');
+  const allData = await Promise.all(ALL_MONTHS.map(m => api(`/api/summary/${m}`)));
+  const getV = (d) => C==='RUB' ? d.income_rub : d.income_usd;
+  const getBiz = (d) => C==='RUB' ? d.exp_biz_rub : d.exp_biz_usd;
+  const getOwn = (d) => C==='RUB' ? d.owner_wd_rub : d.owner_wd_usd;
+  const getMe = (d) => C==='RUB' ? d.exp_pers_rub : d.exp_pers_usd;
+  const getF = (d) => C==='RUB' ? d.exp_wife_rub : d.exp_wife_usd;
+
+  if(CH.inc) CH.inc.destroy();
+  CH.inc = new Chart(document.getElementById('inCh'),{type:'bar',data:{labels:ALL_MONTHS,datasets:[{data:allData.map(d=>Math.round(getV(d))),backgroundColor:'#5B6CF9',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#F1F5F9'},ticks:{font:{size:10},callback:tf}}}}});
+
+  const allCats = {};
+  allData.forEach(d=>{ Object.entries(d.by_category||{}).forEach(([c,v])=>{ allCats[c]=(allCats[c]||0)+v; }); });
+  const ce = Object.entries(allCats).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  document.getElementById('catLg').innerHTML = ce.map(([c],i)=>`<span><span class="ld" style="background:${CL[i]}"></span>${esc(c)}</span>`).join('');
+  if(CH.ct) CH.ct.destroy();
+  CH.ct = new Chart(document.getElementById('ctCh'),{type:'pie',data:{labels:ce.map(e=>e[0]),datasets:[{data:ce.map(e=>Math.round(e[1])),backgroundColor:CL,borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+
+  if(CH.cf) CH.cf.destroy();
+  CH.cf = new Chart(document.getElementById('cfCh'),{type:'bar',data:{labels:ALL_MONTHS,datasets:[
+    {data:allData.map(d=>Math.round(getV(d))),backgroundColor:'#10B981',borderRadius:4},
+    {data:allData.map(d=>-Math.round(getBiz(d))),backgroundColor:'#F43F5E',borderRadius:4},
+    {data:allData.map(d=>-Math.round(getOwn(d))),backgroundColor:'#8B5CF6',borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#F1F5F9'},ticks:{font:{size:10},callback:n=>(n<0?'-':'')+tf(Math.abs(n))}}}}});
+
+  if(CH.pr) CH.pr.destroy();
+  CH.pr = new Chart(document.getElementById('prCh'),{type:'bar',data:{labels:ALL_MONTHS,datasets:[
+    {data:allData.map(d=>Math.round(getMe(d))),backgroundColor:'#F59E0B',borderRadius:4},
+    {data:allData.map(d=>Math.round(getF(d))),backgroundColor:'#EC4899',borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#F1F5F9'},ticks:{font:{size:10},callback:tf}}}}});
+}
+
+async function rLog() {
+  const logs = await api('/api/import-log');
+  const el = document.getElementById('logT');
+  if(!logs.length){el.innerHTML='<div class="empty">Нет импортов</div>';return;}
+  el.innerHTML = `<table><thead><tr><th>Время</th><th>Кто</th><th>Источник</th><th>Файл</th><th>Всего</th><th>Загр.</th><th>Дублей</th><th>Статус</th></tr></thead><tbody>`+
+    logs.map(l=>`<tr><td style="font-size:10px;white-space:nowrap">${(l.time||'').substring(0,16).replace('T',' ')}</td><td><span class="chip">${esc(l.uploaded_by)}</span></td><td>${esc(l.source)}</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis">${esc(l.file_name)}</td><td>${l.total}</td><td>${l.imported}</td><td>${l.dups}</td><td><span class="tag ${l.status==='ok'?'tinc':'texp'}">${l.status}</span></td></tr>`).join('')+
+  `</tbody></table>`;
+}
+
+async function rCp() {
+  const cps = await api('/api/counterparts');
+  document.getElementById('cpL').innerHTML = cps.length ? cps.map(c=>`<div class="cpr">
+    <span class="cpn">${esc(c.name)}</span>
+    <span class="cpf"><span class="chip">${esc(c.category||'—')}</span><span class="tag ${c.op_type==='Доход'?'tinc':c.op_type==='Расход'?'texp':'ttr'}">${c.op_type||'—'}</span>${c.biz_personal?`<span class="tag ${c.biz_personal==='Бизнес'?'tbiz':'tper'}">${c.biz_personal}</span>`:''} ${c.who==='F'?'<span class="tag tf">F</span>':''} ${c.owner_wd==='Y'?'<span class="tag tow">Вывод</span>':''} ${c.transfer==='Y'?'<span class="tag ttr">Трансфер</span>':''}</span>
+    <span class="cpd" onclick="delCp('${esc(c.name)}')">×</span>
+  </div>`).join('') : '<div class="empty">Нет контрагентов</div>';
+}
+
+async function rRu() {
+  const rules = await api('/api/rules');
+  document.getElementById('ruL').innerHTML = rules.length ? rules.map(r=>`<div class="cpr">
+    <span style="font-size:10px;font-weight:700;color:var(--t3);min-width:26px">${r.priority}</span>
+    <span class="cpn">${esc(r.field)}: <span class="chip">${esc(r.match_type)}</span> "${esc(r.pattern)}"${r.amt_type!=='любой'?' ['+r.amt_type+']':''}</span>
+    <span class="cpf"><span class="chip">${esc(r.category||'—')}</span><span class="tag ${r.op_type==='Доход'?'tinc':r.op_type==='Расход'?'texp':'ttr'}">${r.op_type||'—'}</span></span>
+    <span class="cpd" onclick="delRu(${r.id})">×</span>
+  </div>`).join('') : '<div class="empty">Нет правил</div>';
+}
+
+// ЗАГРУЗКА ФАЙЛОВ
+function detectSrc(n) { const f=n.toLowerCase(); if(f.endsWith('.zip')||f.startsWith('statement'))return'ПСКБ'; if(f.endsWith('.csv'))return'Payoneer'; return'?'; }
+function getSrcCls(n) { const f=n.toLowerCase(); if(f.endsWith('.zip'))return'fpsk'; if(f.endsWith('.csv'))return'fpay'; return'funk'; }
+function addFiles(files) { for(const f of files) if(!SF.find(s=>s.name===f.name&&s.size===f.size)) SF.push(f); rFL(); }
+function clearF() { SF=[]; rFL(); }
+function removeFile(i) { SF.splice(i,1); rFL(); }
+function rFL() {
+  document.getElementById('fList').innerHTML = SF.map((f,i)=>`<div class="fi"><span class="fbg ${getSrcCls(f.name)}">${detectSrc(f.name)}</span><span class="fn">${esc(f.name)}</span><span class="fsz">${(f.size/1024).toFixed(0)} KB</span><span class="frm" onclick="removeFile(${i})">×</span></div>`).join('');
+  document.getElementById('impBtn').disabled = SF.length===0;
+}
+
+async function startImport() {
+  const btn = document.getElementById('impBtn');
+  btn.disabled = true;
+  const pw = document.getElementById('prgW');
+  const pb = document.getElementById('prgB');
+  const res = document.getElementById('impRes');
+  pw.style.display='block'; pb.style.width='0%'; res.innerHTML='';
+  const results = [];
+  for(let i=0; i<SF.length; i++) {
+    pb.style.width = Math.round(i/SF.length*80)+'%';
+    const f = SF[i];
+    const fd = new FormData();
+    fd.append('file', f);
+    fd.append('uploaded_by', getUser());
+    try {
+      const r = await fetch('/api/import', { method:'POST', body:fd });
+      const data = await r.json();
+      if(data.error) results.push({file:f.name,ok:false,msg:data.error});
+      else results.push({file:f.name,ok:true,msg:data.message});
+    } catch(e) {
+      results.push({file:f.name,ok:false,msg:'Ошибка сети: '+e.message});
+    }
+  }
+  pb.style.width = '100%';
+  res.innerHTML = results.map(r=>`<div class="ri ${r.ok?'rok':'rer'}"><span class="ric">${r.ok?'✓':'✗'}</span><div><div class="rfn">${esc(r.file)}</div><div class="rm">${r.msg}</div></div></div>`).join('');
+  btn.disabled=false; SF=[]; rFL();
+  await loadStats();
+  rLog();
+  toast(results.every(r=>r.ok) ? 'Импорт завершён ✓' : 'Импорт завершён с ошибками');
+}
+
+// РУЧНАЯ ОПЕРАЦИЯ
+const cm = id => document.getElementById(id).style.display='none';
+function openMM() { document.getElementById('mDt').value=new Date().toISOString().substring(0,10); document.getElementById('mdM').style.display='flex'; }
+async function svM() {
+  const dt=document.getElementById('mDt').value;const am=parseFloat(document.getElementById('mAm').value)||0;
+  if(!dt||!am){alert('Укажите дату и сумму');return;}
+  await api('/api/operations/manual',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dt,amount:am,currency:document.getElementById('mCu').value,desc:document.getElementById('mDs').value,category:document.getElementById('mCt').value,op_type:document.getElementById('mTp').value,biz_personal:document.getElementById('mBl').value,who:document.getElementById('mWh').value,owner_wd:document.getElementById('mOw').value,uploaded_by:getUser()})});
+  cm('mdM'); await loadStats(); rSum(); toast('Операция добавлена ✓');
+}
+
+// КОНТРАГЕНТЫ
+function openCpM() { document.getElementById('mdCp').style.display='flex'; }
+async function svCp() {
+  const name=document.getElementById('cpN').value.trim();if(!name){alert('Укажите название');return;}
+  await api('/api/counterparts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,category:document.getElementById('cpC').value,op_type:document.getElementById('cpT').value,biz_personal:document.getElementById('cpB').value,who:document.getElementById('cpW').value,owner_wd:document.getElementById('cpO').value,transfer:document.getElementById('cpTr').value})});
+  cm('mdCp'); rCp(); toast('Контрагент добавлен ✓');
+}
+async function delCp(name) { if(!confirm('Удалить?'))return; await api('/api/counterparts/'+encodeURIComponent(name),{method:'DELETE'}); rCp(); }
+
+// ПРАВИЛА
+function openRuM() { document.getElementById('mdRu').style.display='flex'; }
+async function svRu() {
+  await api('/api/rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({priority:parseInt(document.getElementById('ruPr').value)||50,field:document.getElementById('ruFl').value,match_type:document.getElementById('ruMt').value,pattern:document.getElementById('ruPt').value,amt_type:document.getElementById('ruAt').value,category:document.getElementById('ruCt').value,op_type:document.getElementById('ruTp').value,biz_personal:document.getElementById('ruBl').value})});
+  cm('mdRu'); rRu(); toast('Правило добавлено ✓');
+}
+async function delRu(id) { if(!confirm('Удалить?'))return; await api('/api/rules/'+id,{method:'DELETE'}); rRu(); }
+
+async function reclassify() {
+  if(!confirm('Переклассифицировать все операции согласно текущим правилам?')) return;
+  const r = await api('/api/reclassify',{method:'POST'});
+  toast(`Обновлено ${r.updated} операций ✓`);
+  rSum();
+}
+
+// Drag & Drop
+const dz = document.getElementById('dzEl');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dg');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dg'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dg');addFiles(e.dataTransfer.files);});
+document.getElementById('fIn').addEventListener('change',e=>addFiles(e.target.files));
+
+// Старт
+(async () => {
+  await loadStats();
+  rSum();
+})();
 </script>
 </body>
 </html>
