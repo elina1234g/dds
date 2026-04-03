@@ -1,64 +1,10 @@
-import logging
-import httpx
-from telegram import Update
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
-
-TG_BOT_TOKEN = "8625551320:AAFXj5r1QlfoBAowDGqsjUDj83jvQNJezcI"
-VK_TOKEN = "vk1.a.jWoa8_O6AazaB7_MRuuUjlqi5-rKH6zIEDHF4jSF92sQJtLP0dX6TGOG79Z1PYLZVCFC68kxemLtj-XPfxB53QsKJ04H0LrgGQVFFCGEsqVlCBSfXNRmBWDCOvDqLHzdR6ZqsA2Zm6fvwI33dZmKYu6FbGI9C1OrFoLvwPynOgMPQa6_syfIadwnRPAr2toiqfFymB5D3CDWgC2g-rFaoA"
-VK_GROUP_ID = "229252646"
-MAX_TOKEN = "f9LHodD0cOJd8HiFgbBfWtSrwyc681GcpNqWU7BgXLKzhNRPASGB2rsCr7IxChG-8_86lDHJrHXb2dsD5K1y"
-MAX_CHAT_ID = 105088278
-
-async def post_to_vk(text, photo_url=None):
-    try:
-        async with httpx.AsyncClient() as client:
-            if photo_url:
-                r1 = await client.get("https://api.vk.com/method/photos.getWallUploadServer", params={"group_id": VK_GROUP_ID, "access_token": VK_TOKEN, "v": "5.131"})
-                upload_url = r1.json()["response"]["upload_url"]
-                photo_data = await client.get(photo_url)
-                r2 = await client.post(upload_url, files={"photo": ("photo.jpg", photo_data.content)})
-                uploaded = r2.json()
-                r3 = await client.post("https://api.vk.com/method/photos.saveWallPhoto", params={"group_id": VK_GROUP_ID, "photo": uploaded["photo"], "server": uploaded["server"], "hash": uploaded["hash"], "access_token": VK_TOKEN, "v": "5.131"})
-                photo_id = r3.json()["response"][0]
-                attachment = f"photo{photo_id['owner_id']}_{photo_id['id']}"
-                await client.post("https://api.vk.com/method/wall.post", params={"owner_id": f"-{VK_GROUP_ID}", "message": text, "attachments": attachment, "access_token": VK_TOKEN, "v": "5.131"})
-            else:
-                await client.post("https://api.vk.com/method/wall.post", params={"owner_id": f"-{VK_GROUP_ID}", "message": text, "access_token": VK_TOKEN, "v": "5.131"})
-        logging.info(f"Отправлено в ВК: {text[:50]}")
-    except Exception as e:
-        logging.error(f"Ошибка ВК: {e}")
-
-async def post_to_max(text):
-    try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                f"https://botapi.max.ru/messages?access_token={MAX_TOKEN}",
-                json={"recipient": {"chat_id": MAX_CHAT_ID}, "message": {"text": text}},
-                headers={"Content-Type": "application/json"}
-            )
-            logging.info(f"MAX ответ: {resp.status_code} {resp.text}")
-    except Exception as e:
-        logging.error(f"Ошибка MAX: {e}")
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.channel_post
-    if not msg:
-        return
-    text = msg.text or msg.caption or ""
-    photo_url = None
-    if msg.photo:
-        file = await context.bot.get_file(msg.photo[-1].file_id)
-        photo_url = file.file_path
-    if text or photo_url:
-        await post_to_vk(text, photo_url)
-        await post_to_max(text)
-
-def main():
-    logging.basicConfig(level=logging.INFO)
-    app = Application.builder().token(TG_BOT_TOKEN).build()
-    app.add_handler(MessageHandler(filters.ALL, handle_message))
-    print("Бот запущен!")
-    app.run_polling()
-
-if __name__ == "__main__":
-    main()
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ДДС — Финансы ИП</title></head>
+<body>
+<script>
+// Временная заглушка — основное приложение загружается
+window.location.href = '/api/me';
+</script>
+</body>
+</html>
